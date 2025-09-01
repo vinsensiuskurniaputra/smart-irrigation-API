@@ -12,5 +12,7 @@ type Device struct {
 	DeviceCode string `gorm:"type:varchar(100);uniqueIndex;not null" json:"device_code"`
 	Status     string `gorm:"type:varchar(20);default:'offline';check:status IN ('online','offline')" json:"status"`
 
-	User models.User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
+	User      models.User `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;" json:"user"`
+	Sensors   []Sensor    `gorm:"foreignKey:DeviceID" json:"sensors"`
+	Actuators []Actuator  `gorm:"foreignKey:DeviceID" json:"actuators"`
 }
