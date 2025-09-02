@@ -7,4 +7,5 @@ func RunSeeders(db *gorm.DB) {
 	seedDevice(db)
 	seedActuators(db)
 	seedSensors(db)
+	seedSensorReading(db)
 }

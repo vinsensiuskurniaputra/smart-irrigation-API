@@ -12,10 +12,12 @@ func Register(rg *gin.RouterGroup, db *gorm.DB) {
 	repo := devicerepo.NewDeviceRepository(db)
 	uc := deviceusecase.NewDeviceUsecase(repo)
 	h := devicehandler.NewDeviceHandler(uc)
+	liveHandler := devicehandler.NewLiveDataHandler(db)
 
 	devices := rg.Group("/devices")
 	{
 		devices.GET("/", h.List)
 		devices.GET(":id", h.Detail)
+		devices.GET(":id/live", liveHandler.DeviceLive)
 	}
 }

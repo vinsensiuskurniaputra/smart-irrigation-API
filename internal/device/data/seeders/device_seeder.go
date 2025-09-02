@@ -17,7 +17,7 @@ func seedDevice(db *gorm.DB) {
 				UserID:     1,
 				DeviceName: "Greenhouse",
 				DeviceCode: "GH-001",
-				Status:     "offline",
+				Status:     "online",
 			},
 		}
 
