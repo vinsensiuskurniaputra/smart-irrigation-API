@@ -17,7 +17,7 @@ func RegisterActuatorRoutes(rg *gin.RouterGroup, db *gorm.DB, mqttClient *coremq
 	if mqttClient != nil && mqttClient.IsConnected() {
 		rawClient = mqttClient.Native()
 	}
-	uc := deviceusecase.NewActuatorControlUsecase(repo, rawClient)
+	uc := deviceusecase.NewActuatorControlUsecase(repo, db, rawClient)
 	h := devicehandler.NewActuatorHandler(uc)
 	a := rg.Group("/actuators")
 	{

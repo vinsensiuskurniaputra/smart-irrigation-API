@@ -5,21 +5,24 @@ import (
 	"log"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	devicemodels "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/device/data/models"
 	devicerepo "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/device/data/repositories"
+	"gorm.io/gorm"
 )
 
 type ActuatorControlUsecase struct {
 	repo       devicerepo.ActuatorRepository
+	db         *gorm.DB
 	mqttClient mqtt.Client
 }
 
-func NewActuatorControlUsecase(r devicerepo.ActuatorRepository, client mqtt.Client) *ActuatorControlUsecase {
-	return &ActuatorControlUsecase{repo: r, mqttClient: client}
+func NewActuatorControlUsecase(r devicerepo.ActuatorRepository, db *gorm.DB, client mqtt.Client) *ActuatorControlUsecase {
+	return &ActuatorControlUsecase{repo: r, db: db, mqttClient: client}
 }
 
 // Control toggles actuator status (on/off), updates DB, logs and publishes MQTT command
 func (uc *ActuatorControlUsecase) Control(actuatorID uint64, desired string, triggeredBy string) error {
-	_, err := uc.repo.FindByID(actuatorID)
+	act, err := uc.repo.FindByID(actuatorID)
 	if err != nil {
 		return err
 	}
@@ -34,8 +37,13 @@ func (uc *ActuatorControlUsecase) Control(actuatorID uint64, desired string, tri
 	}
 	// Publish MQTT command. Topic pattern: actuators/{actuator_id}/command
 	if uc.mqttClient != nil && uc.mqttClient.IsConnected() {
-		topic := fmt.Sprintf("actuators/%d/command", actuatorID)
-		payload := fmt.Sprintf("{\"action\":\"%s\"}", desired)
+		// fetch device to compose topic with device_code
+		var device devicemodels.Device
+		if err := uc.db.Select("device_code").First(&device, act.DeviceID).Error; err != nil {
+			log.Printf("warn: cannot fetch device for actuator topic: %v", err)
+		}
+		topic := fmt.Sprintf("device/%s/actuator/%d", device.DeviceCode, actuatorID)
+		payload := fmt.Sprintf("{\"value\":\"%s\"}", desired)
 		token := uc.mqttClient.Publish(topic, 0, false, payload)
 		token.Wait()
 		if token.Error() != nil {
