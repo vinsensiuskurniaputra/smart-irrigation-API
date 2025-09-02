@@ -53,3 +53,5 @@ func (c *Client) Subscribe(topic string, cb mqtt.MessageHandler) error {
 }
 
 func (c *Client) IsConnected() bool { return c.cli.IsConnected() }
+
+func (c *Client) Native() mqtt.Client { return c.cli }
