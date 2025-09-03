@@ -42,12 +42,39 @@ func (uc *ActuatorControlUsecase) Control(actuatorID uint64, desired string, tri
 		if err := uc.db.Select("device_code").First(&device, act.DeviceID).Error; err != nil {
 			log.Printf("warn: cannot fetch device for actuator topic: %v", err)
 		}
-		topic := fmt.Sprintf("device/%s/actuator/%d", device.DeviceCode, actuatorID)
+		topic := fmt.Sprintf("device/%s/actuator/%d/status", device.DeviceCode, actuatorID)
 		payload := fmt.Sprintf("{\"value\":\"%s\"}", desired)
 		token := uc.mqttClient.Publish(topic, 0, false, payload)
 		token.Wait()
 		if token.Error() != nil {
 			log.Printf("failed publish actuator command: %v", token.Error())
+		}
+	}
+	return nil
+}
+
+// UpdateMode updates actuator mode (auto/manual) and publishes MQTT mode command
+func (uc *ActuatorControlUsecase) UpdateMode(actuatorID uint64, mode string, triggeredBy string) error {
+	act, err := uc.repo.FindByID(actuatorID)
+	if err != nil {
+		return err
+	}
+	if err := uc.repo.UpdateMode(actuatorID, mode); err != nil {
+		return err
+	}
+	if err := uc.repo.LogAction(actuatorID, "mode:"+mode, triggeredBy); err != nil {
+		log.Printf("warn: failed to log actuator mode change: %v", err)
+	}
+	if uc.mqttClient != nil && uc.mqttClient.IsConnected() {
+		var device devicemodels.Device
+		if err := uc.db.Select("device_code").First(&device, act.DeviceID).Error; err == nil {
+			topic := fmt.Sprintf("device/%s/actuator/%d/mode", device.DeviceCode, actuatorID)
+			payload := fmt.Sprintf("{\"value\":\"%s\"}", mode)
+			token := uc.mqttClient.Publish(topic, 0, false, payload)
+			token.Wait()
+			if token.Error() != nil {
+				log.Printf("failed publish actuator mode: %v", token.Error())
+			}
 		}
 	}
 	return nil

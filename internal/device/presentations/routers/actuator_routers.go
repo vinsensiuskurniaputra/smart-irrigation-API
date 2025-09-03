@@ -22,5 +22,6 @@ func RegisterActuatorRoutes(rg *gin.RouterGroup, db *gorm.DB, mqttClient *coremq
 	a := rg.Group("/actuators")
 	{
 		a.POST(":id/control", h.Control)
+		a.PUT(":id/mode", h.UpdateMode)
 	}
 }

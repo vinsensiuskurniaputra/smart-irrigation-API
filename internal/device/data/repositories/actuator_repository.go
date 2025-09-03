@@ -10,6 +10,7 @@ import (
 type ActuatorRepository interface {
 	FindByID(id uint64) (*devicemodels.Actuator, error)
 	UpdateStatus(id uint64, status string) error
+	UpdateMode(id uint64, mode string) error
 	LogAction(actuatorID uint64, action, triggeredBy string) error
 }
 
@@ -34,6 +35,13 @@ func (r *actuatorRepository) UpdateStatus(id uint64, status string) error {
 		return errors.New("invalid status")
 	}
 	return r.db.Model(&devicemodels.Actuator{}).Where("id = ?", id).Update("status", status).Error
+}
+
+func (r *actuatorRepository) UpdateMode(id uint64, mode string) error {
+	if mode != "auto" && mode != "manual" {
+		return errors.New("invalid mode")
+	}
+	return r.db.Model(&devicemodels.Actuator{}).Where("id = ?", id).Update("mode", mode).Error
 }
 
 func (r *actuatorRepository) LogAction(actuatorID uint64, action, triggeredBy string) error {
