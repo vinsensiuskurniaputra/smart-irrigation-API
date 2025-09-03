@@ -35,25 +35,18 @@ func seedIrrigationRules(db *gorm.DB) {
 				PreferredHumidity: 65, // %
 			},
 			{
-				PlantName:         "Chili Pepper",
+				PlantName:         "Monstera",
 				MinMoisture:       50,
 				MaxMoisture:       70,
 				PreferredTemp:     24, // °C
 				PreferredHumidity: 60, // %
 			},
 			{
-				PlantName:         "Lettuce",
+				PlantName:         "Chili",
 				MinMoisture:       60,
 				MaxMoisture:       80,
 				PreferredTemp:     17, // °C
 				PreferredHumidity: 70, // %
-			},
-			{
-				PlantName:         "Strawberry",
-				MinMoisture:       60,
-				MaxMoisture:       75,
-				PreferredTemp:     20, // °C
-				PreferredHumidity: 65, // %
 			},
 		}
 

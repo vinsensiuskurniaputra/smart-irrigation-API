@@ -13,6 +13,7 @@ type Config struct {
 	Redis    RedisConfig
 	Log      LogConfig
 	MQTT     MQTTConfig
+	ML       MLConfig
 }
 
 type ServerConfig struct {
@@ -53,6 +54,10 @@ type MQTTConfig struct {
 	Password string
 	ClientID string
 	Topic    string
+}
+
+type MLConfig struct {
+	PredictionURL string
 }
 
 func LoadConfig() *Config {
@@ -97,6 +102,9 @@ func LoadConfig() *Config {
 			Password: viper.GetString("MQTT_PASSWORD"),
 			ClientID: viper.GetString("MQTT_CLIENT_ID"),
 			Topic:    viper.GetString("MQTT_TOPIC"),
+		},
+		ML: MLConfig{
+			PredictionURL: viper.GetString("ML_PREDICTION_URL"),
 		},
 	}
 

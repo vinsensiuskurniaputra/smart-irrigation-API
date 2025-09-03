@@ -33,7 +33,7 @@ func main() {
 	}
 
 	// Register Routes (pass mqtt to device routes)
-	router.RegisterRouter(r, db, mq)
+	router.RegisterRouter(r, db, mq, cfg)
 
 	// Subscribe to sensor topics if connected
 	if mq != nil && mq.IsConnected() {
