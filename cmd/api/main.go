@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/cors"
 	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 
 	"github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/core/infrastructures/config"
 	"github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/core/infrastructures/database"
@@ -50,14 +51,20 @@ func main() {
 
 	// Subscribe to sensor topics if connected
 	if mq != nil && mq.IsConnected() {
+		// Sensor reading consumer
 		sensorRepo := devicerepo.NewSensorReadingRepository(db)
-		consumer := deviceusecase.NewSensorReadingConsumer(sensorRepo)
-		topic := cfg.MQTT.Topic
-		if topic == "" {
-			topic = "sensors/#" // default wildcard
+		sensorConsumer := deviceusecase.NewSensorReadingConsumer(sensorRepo)
+		sensorTopic := "device/+/sensor/+" // narrow to only sensor readings
+		if err := mq.Subscribe(sensorTopic, sensorConsumer.Handler()); err != nil {
+			log.Printf("Failed subscribe MQTT topic %s: %v", sensorTopic, err)
 		}
-		if err := mq.Subscribe(topic, consumer.Handler()); err != nil {
-			log.Printf("Failed subscribe MQTT topic %s: %v", topic, err)
+
+		// Actuator actual status consumer
+		actuatorRepo := devicerepo.NewActuatorRepository(db)
+		actuatorStatusConsumer := deviceusecase.NewActuatorStatusConsumer(actuatorRepo)
+		actuatorStatusTopic := "device/+/actuator/+/actual-status"
+		if err := mq.Subscribe(actuatorStatusTopic, actuatorStatusConsumer.Handler()); err != nil {
+			log.Printf("Failed subscribe MQTT topic %s: %v", actuatorStatusTopic, err)
 		}
 	}
 
