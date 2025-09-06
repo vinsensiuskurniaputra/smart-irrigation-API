@@ -9,6 +9,7 @@ type DeviceRepository interface {
 	FindByUser(userID uint, limit, offset int) ([]devicemodels.Device, error)
 	CountByUser(userID uint) (int64, error)
 	FindDetail(id uint, userID uint) (*devicemodels.Device, error)
+	UpdateStatusByCode(deviceCode string, status string) error
 }
 
 type deviceRepository struct {
@@ -45,4 +46,11 @@ func (r *deviceRepository) FindDetail(id uint, userID uint) (*devicemodels.Devic
 		return nil, err
 	}
 	return &device, nil
+}
+
+func (r *deviceRepository) UpdateStatusByCode(deviceCode string, status string) error {
+	if status != "online" && status != "offline" {
+		return nil // silently ignore invalid (could return error if preferred)
+	}
+	return r.db.Model(&devicemodels.Device{}).Where("device_code = ?", deviceCode).Update("status", status).Error
 }

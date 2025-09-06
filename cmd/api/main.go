@@ -66,6 +66,14 @@ func main() {
 		if err := mq.Subscribe(actuatorStatusTopic, actuatorStatusConsumer.Handler()); err != nil {
 			log.Printf("Failed subscribe MQTT topic %s: %v", actuatorStatusTopic, err)
 		}
+
+		// Device online/offline status consumer
+		deviceRepo := devicerepo.NewDeviceRepository(db)
+		deviceStatusConsumer := deviceusecase.NewDeviceStatusConsumer(deviceRepo)
+		deviceStatusTopic := "device/+/status"
+		if err := mq.Subscribe(deviceStatusTopic, deviceStatusConsumer.Handler()); err != nil {
+			log.Printf("Failed subscribe MQTT topic %s: %v", deviceStatusTopic, err)
+		}
 	}
 
 	log.Printf("Server running on port %s", port)
