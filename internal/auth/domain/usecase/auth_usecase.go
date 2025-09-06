@@ -19,26 +19,26 @@ func NewAuthUsecase(userRepo repositories.UserRepository) *AuthUsecase {
 	return &AuthUsecase{userRepo: userRepo}
 }
 
-func (uc *AuthUsecase) Login(username, password string) (string, error) {
+func (uc *AuthUsecase) Login(username, password string) (string, *models.User, error) {
 	user, err := uc.userRepo.FindByUsername(username)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
 	// cek password
 	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)) != nil {
-		return "", errors.New("invalid password")
+		return "", nil, errors.New("invalid password")
 	}
 
 	token, err := utils.GenerateToken(user.ID)
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
 
-	return token, err
+	return token, user, nil
 }
 
-func (uc *AuthUsecase) Register(username, password, name string) error {
+func (uc *AuthUsecase) Register(username, password, name, email string) error {
 	// Hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -49,6 +49,7 @@ func (uc *AuthUsecase) Register(username, password, name string) error {
 		Username: username,
 		Password: string(hash),
 		Name:     name,
+		Email:    email,
 	}
 
 	return uc.userRepo.Create(user)

@@ -66,11 +66,22 @@ func (uc *IrrigationUsecase) SavePredictedPlant(deviceID uint64, labelIndex int,
 	if !ok {
 		return nil, fmt.Errorf("invalid label index")
 	}
+	// check if plant already exists for device
+	existing, err := uc.PlantRepo.FindByDevice(deviceID)
+	if err == nil && existing != nil {
+		// update existing plant
+		p, err2 := uc.PlantRepo.UpdatePlant(uint64(existing.ID), name, &imageURL)
+		if err2 != nil {
+			return nil, err2
+		}
+		uc.publishRule(p)
+		return toPlantDTO(p), nil
+	}
+	// create new plant
 	plant, err := uc.PlantRepo.CreatePlant(deviceID, name, imageURL)
 	if err != nil {
 		return nil, err
 	}
-	// reload plant with rule for publishing
 	loaded, err := uc.PlantRepo.GetPlant(uint64(plant.ID))
 	if err == nil {
 		uc.publishRule(loaded)
@@ -84,6 +95,18 @@ func (uc *IrrigationUsecase) GetPlant(id uint64) (*irrigationdto.PlantDTO, error
 		return nil, err
 	}
 	return toPlantDTO(p), nil
+}
+
+func (uc *IrrigationUsecase) ListPlantsByDevice(deviceID uint64) ([]*irrigationdto.PlantDTO, error) {
+	plants, err := uc.PlantRepo.ListPlantsByDevice(deviceID)
+	if err != nil {
+		return nil, err
+	}
+	res := make([]*irrigationdto.PlantDTO, 0, len(plants))
+	for _, p := range plants {
+		res = append(res, toPlantDTO(p))
+	}
+	return res, nil
 }
 
 func (uc *IrrigationUsecase) UpdatePlant(id uint64, plantName string, imageURL *string) (*irrigationdto.PlantDTO, error) {

@@ -18,6 +18,7 @@ type ActuatorDTO struct {
 	Type         string `json:"type"`
 	PinNumber    string `json:"pin_number"`
 	Status       string `json:"status"`
+	Mode         string `json:"mode"`
 }
 
 type DeviceDetailDTO struct {

@@ -22,6 +22,7 @@ func Register(rg *gin.RouterGroup, predictionURL string, db *gorm.DB, mqttClient
 	{
 		grp.POST("/predict", h.PredictPlant)
 		grp.POST("/devices/:device_id/plant", h.SavePredicted)
+		grp.GET("/devices/:device_id/plants", h.ListPlantsByDevice)
 		grp.GET("/plants/:plant_id", h.GetPlant)
 		grp.PUT("/plants/:plant_id", h.UpdatePlant)
 	}

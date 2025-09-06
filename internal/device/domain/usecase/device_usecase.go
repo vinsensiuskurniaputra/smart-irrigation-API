@@ -61,7 +61,7 @@ func (uc *DeviceUsecase) Detail(id uint, userID uint) (*dto.DeviceDetailDTO, err
 		detail.Sensors = append(detail.Sensors, dto.SensorDTO{ID: s.ID, SensorType: s.SensorType})
 	}
 	for _, a := range device.Actuators {
-		detail.Actuators = append(detail.Actuators, dto.ActuatorDTO{ID: a.ID, ActuatorName: a.ActuatorName, Type: a.Type, PinNumber: a.PinNumber, Status: a.Status})
+		detail.Actuators = append(detail.Actuators, dto.ActuatorDTO{ID: a.ID, ActuatorName: a.ActuatorName, Type: a.Type, PinNumber: a.PinNumber, Status: a.Status, Mode: a.Mode})
 	}
 	return detail, nil
 }

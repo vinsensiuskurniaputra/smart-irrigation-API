@@ -27,13 +27,20 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	token, err := h.authUC.Login(req.Username, req.Password)
+	token, user, err := h.authUC.Login(req.Username, req.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{"token": token}})
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{"token": token, "user": gin.H{
+		"id":            user.ID,
+		"username":      user.Username,
+		"name":          user.Name,
+		"email":         user.Email,
+		"role":          user.Role,
+		"photo_profile": user.PhotoProfile,
+	}}})
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -43,7 +50,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	if err := h.authUC.Register(req.Username, req.Password, req.Name); err != nil {
+	if err := h.authUC.Register(req.Username, req.Password, req.Name, req.Email); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to register user"})
 		return
 	}

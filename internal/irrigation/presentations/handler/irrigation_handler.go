@@ -117,7 +117,7 @@ func (h *IrrigationHandler) PredictPlant(c *gin.Context) {
 }
 
 type savePlantRequest struct {
-	LabelIndex int    `json:"label_index" binding:"required"`
+	LabelIndex int    `json:"label_index"`
 	ImageURL   string `json:"image_url"`
 }
 
@@ -182,4 +182,20 @@ func (h *IrrigationHandler) UpdatePlant(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"data": plant})
+}
+
+// ListPlantsByDevice returns all plants for a given device id
+func (h *IrrigationHandler) ListPlantsByDevice(c *gin.Context) {
+	deviceIDParam := c.Param("device_id")
+	deviceID, err := strconv.ParseUint(deviceIDParam, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid device id"})
+		return
+	}
+	plants, err := h.uc.ListPlantsByDevice(deviceID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": plants})
 }

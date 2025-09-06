@@ -4,6 +4,9 @@ import (
 	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
+	"time"
+
 	"github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/core/infrastructures/config"
 	"github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/core/infrastructures/database"
 	mqttInfra "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/core/infrastructures/mqtt"
@@ -25,6 +28,16 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// === Tambahkan Middleware CORS ===
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // boleh semua origin (kalau mau restrict, ganti dengan domain tertentu)
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Prepare MQTT (optional)
 	var mq *mqttInfra.Client

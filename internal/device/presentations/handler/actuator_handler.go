@@ -41,7 +41,7 @@ func (h *ActuatorHandler) Control(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "actuator updated", "actuator_id": id64, "action": req.Action})
+	c.JSON(http.StatusOK, gin.H{"message": "actuator updated", "data": gin.H{"actuator_id": id64, "action": req.Action}})
 }
 
 func (h *ActuatorHandler) UpdateMode(c *gin.Context) {
@@ -64,5 +64,5 @@ func (h *ActuatorHandler) UpdateMode(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "actuator mode updated", "actuator_id": id64, "mode": req.Mode})
+	c.JSON(http.StatusOK, gin.H{"message": "actuator mode updated", "data": gin.H{"actuator_id": id64, "mode": req.Mode}})
 }

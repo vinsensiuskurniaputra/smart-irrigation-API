@@ -12,6 +12,8 @@ type PlantRepository interface {
 	CreatePlant(deviceID uint64, plantName string, imageURL string) (*models.Plant, error)
 	GetPlant(id uint64) (*models.Plant, error)
 	UpdatePlant(id uint64, plantName string, imageURL *string) (*models.Plant, error)
+	ListPlantsByDevice(deviceID uint64) ([]*models.Plant, error)
+	FindByDevice(deviceID uint64) (*models.Plant, error)
 }
 
 type plantRepository struct{ db *gorm.DB }
@@ -71,5 +73,21 @@ func (r *plantRepository) UpdatePlant(id uint64, plantName string, imageURL *str
 		return nil, err
 	}
 	r.db.Preload("IrrigationRule").First(&p, id)
+	return &p, nil
+}
+
+func (r *plantRepository) ListPlantsByDevice(deviceID uint64) ([]*models.Plant, error) {
+	var plants []*models.Plant
+	if err := r.db.Preload("IrrigationRule").Where("device_id = ?", deviceID).Find(&plants).Error; err != nil {
+		return nil, err
+	}
+	return plants, nil
+}
+
+func (r *plantRepository) FindByDevice(deviceID uint64) (*models.Plant, error) {
+	var p models.Plant
+	if err := r.db.Preload("IrrigationRule").Where("device_id = ?", deviceID).First(&p).Error; err != nil {
+		return nil, err
+	}
 	return &p, nil
 }
