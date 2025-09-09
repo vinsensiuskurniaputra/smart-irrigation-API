@@ -77,5 +77,5 @@ func main() {
 	}
 
 	log.Printf("Server running on port %s", port)
-	r.Run(":" + port)
+	r.Run("0.0.0.0:" + port)
 }
