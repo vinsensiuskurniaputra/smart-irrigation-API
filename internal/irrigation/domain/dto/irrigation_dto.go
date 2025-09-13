@@ -17,3 +17,11 @@ type IrrigationRuleDTO struct {
 	PreferredTemp     float64 `json:"preferred_temp"`
 	PreferredHumidity float64 `json:"preferred_humidity"`
 }
+
+type ChatAIRequest struct {
+	Message string `json:"message" binding:"required"`
+}
+
+type ChatAIResponse struct {
+	Response string `json:"response"`
+}

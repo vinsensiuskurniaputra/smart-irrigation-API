@@ -10,6 +10,7 @@ import (
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	devicemodels "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/device/data/models"
+	devicerepo "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/device/data/repositories"
 	models "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/irrigation/data/models"
 	irrigationrepo "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/irrigation/data/repositories"
 	irrigationdto "github.com/vinsensiuskurniaputra/smart-irrigation-API/internal/irrigation/domain/dto"
@@ -22,15 +23,25 @@ type PredictionResult struct {
 }
 
 type IrrigationUsecase struct {
-	PredictionURL string
-	HTTPClient    *http.Client
-	PlantRepo     irrigationrepo.PlantRepository
-	DB            *gorm.DB
-	MQTTClient    mqtt.Client
+	PredictionURL     string
+	HTTPClient        *http.Client
+	PlantRepo         irrigationrepo.PlantRepository
+	DeviceRepo        devicerepo.DeviceRepository
+	SensorReadingRepo *devicerepo.SensorReadingRepository
+	DB                *gorm.DB
+	MQTTClient        mqtt.Client
 }
 
-func NewIrrigationUsecase(predictionURL string, plantRepo irrigationrepo.PlantRepository, db *gorm.DB, mqttClient mqtt.Client) *IrrigationUsecase {
-	return &IrrigationUsecase{PredictionURL: predictionURL, HTTPClient: &http.Client{}, PlantRepo: plantRepo, DB: db, MQTTClient: mqttClient}
+func NewIrrigationUsecase(predictionURL string, plantRepo irrigationrepo.PlantRepository, deviceRepo devicerepo.DeviceRepository, sensorReadingRepo *devicerepo.SensorReadingRepository, db *gorm.DB, mqttClient mqtt.Client) *IrrigationUsecase {
+	return &IrrigationUsecase{
+		PredictionURL:     predictionURL,
+		HTTPClient:        &http.Client{},
+		PlantRepo:         plantRepo,
+		DeviceRepo:        deviceRepo,
+		SensorReadingRepo: sensorReadingRepo,
+		DB:                db,
+		MQTTClient:        mqttClient,
+	}
 }
 
 func (uc *IrrigationUsecase) PredictPlant(fileField string, filename string, fileBytes []byte) (*http.Response, error) {
@@ -198,4 +209,72 @@ func toPlantDTO(p *models.Plant) *irrigationdto.PlantDTO {
 		}
 	}
 	return dto
+}
+
+// ChatWithPlant handles chat AI functionality by getting user's plant and sensor data
+func (uc *IrrigationUsecase) ChatWithPlant(userID uint, message string) (string, error) {
+	// Get user's devices
+	devices, err := uc.DeviceRepo.FindByUser(userID, 1, 0) // Get first device
+	if err != nil || len(devices) == 0 {
+		return "", fmt.Errorf("no devices found for user")
+	}
+
+	device := devices[0]
+
+	// Get plant associated with the device
+	plant, err := uc.PlantRepo.FindByDevice(uint64(device.ID))
+	if err != nil {
+		return "", fmt.Errorf("no plant found for device")
+	}
+
+	// Get sensors for the device
+	deviceDetail, err := uc.DeviceRepo.FindDetail(uint(device.ID), userID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get device details: %v", err)
+	}
+
+	// Extract sensor IDs
+	var sensorIDs []uint64
+	for _, sensor := range deviceDetail.Sensors {
+		sensorIDs = append(sensorIDs, uint64(sensor.ID))
+	}
+
+	// Get latest sensor readings
+	readings, err := uc.SensorReadingRepo.LastNSensorReadings(sensorIDs, 1)
+	if err != nil {
+		return "", fmt.Errorf("failed to get sensor readings: %v", err)
+	}
+
+	// Extract sensor values
+	var temperature, humidityAir, humiditySoil float64
+
+	for _, sensor := range deviceDetail.Sensors {
+		if sensorReadings, ok := readings[uint64(sensor.ID)]; ok && len(sensorReadings) > 0 {
+			switch sensor.SensorType {
+			case "temperature":
+				temperature = sensorReadings[0].Value
+			case "humidity":
+				humidityAir = sensorReadings[0].Value
+			case "soil_moisture":
+				humiditySoil = sensorReadings[0].Value
+			}
+		}
+	}
+
+	// Create PlantQuery for AI
+	query := PlantQuery{
+		Type:         plant.PlantName,
+		Temperature:  temperature,
+		HumidityAir:  humidityAir,
+		HumiditySoil: humiditySoil,
+		Question:     message,
+	}
+
+	// Call AI service
+	response, err := AskPlant(query)
+	if err != nil {
+		return "", fmt.Errorf("failed to get AI response: %v", err)
+	}
+
+	return response, nil
 }

@@ -199,3 +199,90 @@ func (h *IrrigationHandler) ListPlantsByDevice(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"data": plants})
 }
+
+// ChatWithPlant handles chat AI requests
+func (h *IrrigationHandler) ChatWithPlant(c *gin.Context) {
+	// Get user ID from JWT token
+	userIDInterface, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not authenticated"})
+		return
+	}
+
+	userID, ok := userIDInterface.(uint)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid user ID"})
+		return
+	}
+
+	// Parse request body
+	var req struct {
+		Message string `json:"message" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Call usecase
+	raw, err := h.uc.ChatWithPlant(userID, req.Message)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// The AI response might be a JSON string encoded as a Go string
+	// Try to parse it into an object first; if it's a quoted string, unquote then parse.
+	var parsed interface{}
+	var content string
+
+	// Attempt to unmarshal raw as JSON
+	if err := json.Unmarshal([]byte(raw), &parsed); err != nil {
+		// If unmarshalling fails, try to unquote (the usecase returned a quoted JSON string)
+		var unquoted string
+		if err2 := json.Unmarshal([]byte(raw), &unquoted); err2 == nil {
+			// try parse unquoted
+			if err3 := json.Unmarshal([]byte(unquoted), &parsed); err3 == nil {
+				// parsed ok
+			}
+		}
+	}
+
+	// Try to extract content from parsed structure
+	if parsed != nil {
+		if m, ok := parsed.(map[string]interface{}); ok {
+			// navigate to choices[0].message.content
+			if choices, ok := m["choices"].([]interface{}); ok && len(choices) > 0 {
+				if first, ok := choices[0].(map[string]interface{}); ok {
+					if messageObj, ok := first["message"].(map[string]interface{}); ok {
+						if cval, ok := messageObj["content"].(string); ok {
+							content = cval
+						}
+					}
+					// some providers put content under "text" or directly under "message"
+					if content == "" {
+						if textVal, ok := first["text"].(string); ok {
+							content = textVal
+						}
+					}
+				}
+			}
+			// fallback: direct content field
+			if content == "" {
+				if cval, ok := m["content"].(string); ok {
+					content = cval
+				}
+			}
+		}
+	}
+
+	// If we didn't find content, return raw
+	if content == "" {
+		c.JSON(http.StatusOK, gin.H{"response": raw})
+		return
+	}
+
+	// Return only the assistant content
+	c.JSON(http.StatusOK, gin.H{"response": content})
+}
