@@ -10,11 +10,11 @@ import (
 )
 
 type PlantQuery struct {
-	Type           string  // jenis tanaman
-	Temperature    float64 // suhu (°C)
-	HumidityAir    float64 // kelembapan udara (%)
-	HumiditySoil   float64 // kelembapan tanah (%)
-	Question       string  // pertanyaan ke tanaman
+	Type         string  // jenis tanaman
+	Temperature  float64 // suhu (°C)
+	HumidityAir  float64 // kelembapan udara (%)
+	HumiditySoil float64 // kelembapan tanah (%)
+	Question     string  // pertanyaan ke tanaman
 }
 
 func AskPlant(query PlantQuery) (string, error) {
@@ -34,7 +34,11 @@ func AskPlant(query PlantQuery) (string, error) {
 	payload := map[string]interface{}{
 		"model": "llama-3.3-70b",
 		"messages": []map[string]string{
-			{"role": "system", "content": "Kamu adalah tanaman yang bisa berbicara dengan manusia. Jawablah seolah-olah kamu adalah tanaman tersebut."},
+			{"role": "system", "content": `Kamu adalah tanaman yang bisa berbicara dengan manusia. 
+				Jawablah SEOLAH kamu adalah tanaman tersebut. 
+				- Jika pertanyaan berkaitan dengan kondisi fisik (suhu, kelembapan udara, kelembapan tanah), gunakan data yang diberikan untuk menjawab dengan cukup detail (2-4 kalimat). 
+				- Jika pertanyaan tidak berhubungan dengan kondisi fisik, jawablah tanpa menyebutkan data kondisi sama sekali, cukup berikan jawaban yang wajar sebagai tanaman (2-4 kalimat). 
+				Jangan membuat penjelasan yang terlalu panjang atau keluar konteks.`},
 			{"role": "user", "content": prompt},
 		},
 	}
