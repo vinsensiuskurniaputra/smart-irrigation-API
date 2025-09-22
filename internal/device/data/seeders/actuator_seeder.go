@@ -20,13 +20,6 @@ func seedActuators(db *gorm.DB) {
 				PinNumber:   "A1",
 				Status:      "off",
 			},
-			{
-				DeviceID:     1,
-				ActuatorName: "Grow Light",
-				Type:         "lamp",
-				PinNumber:   "A2",
-				Status:      "off",
-			},
 		}
 
 		if err := db.Create(&actuators).Error; err != nil {
